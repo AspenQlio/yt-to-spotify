@@ -146,3 +146,20 @@ def import_to_spotify(input_path='songs.json'):
         print(f"   Saved {len(tracks_to_add)} songs to your library...")
     
     print(f"Migration completed! {total_added} songs imported to Spotify.")
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Migrate your Liked Songs from YouTube Music to Spotify.")
+    parser.add_argument('--extract', action='store_true', help="Extract songs from YouTube Music")
+    parser.add_argument('--import-sp', action='store_true', help="Import extracted songs to Spotify")
+    parser.add_argument('--all', action='store_true', help="Run extraction and then import")
+    
+    args = parser.parse_args()
+    
+    if args.all:
+        extract_from_youtube()
+        import_to_spotify()
+    elif args.extract:
+        extract_from_youtube()
+    elif args.import_sp:
+        import_to_spotify()
+    else:
+        parser.print_help()

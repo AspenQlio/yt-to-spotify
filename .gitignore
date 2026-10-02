@@ -1,0 +1,8 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.spotify_cache
+cookies.json
+songs.json

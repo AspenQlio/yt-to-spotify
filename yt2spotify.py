@@ -82,3 +82,67 @@ def extract_from_youtube(cookies_path='cookies.json', output_path='songs.json'):
             
         browser.close()
     return songs
+def import_to_spotify(input_path='songs.json'):
+    """Reads extracted songs and injects them into Spotify's 'Liked Songs'."""
+    if not os.path.exists(input_path):
+        print(f"Error: '{input_path}' not found. Run the extraction first.")
+        return
+
+    client_id = os.getenv("SPOTIPY_CLIENT_ID")
+    client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
+    redirect_uri = os.getenv("SPOTIPY_REDIRECT_URI", "http://127.0.0.1:8888/callback")
+    
+    if not client_id or not client_secret:
+        print("Error: Missing Spotify credentials in .env file.")
+        return
+
+    print("Connecting to Spotify...")
+    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(
+        client_id=client_id,
+        client_secret=client_secret,
+        redirect_uri=redirect_uri,
+        scope='user-library-modify',
+        cache_path='.spotify_cache'
+    ))
+    
+    # Force auth if necessary
+    try:
+        sp.me()
+    except Exception as e:
+        print(f"Spotify authentication error: {e}")
+        return
+
+    print(f"Reading songs from '{input_path}'...")
+    with open(input_path, 'r', encoding='utf-8') as f:
+        liked_songs = json.load(f)
+        
+    # Reverse to keep chronological order (oldest first, newest last)
+    liked_songs.reverse()
+    
+    tracks_to_add = []
+    total_added = 0
+    
+    for song in liked_songs:
+        query = f"{song['title']} {song['artist']}"
+        print(f"Searching: {query}")
+        
+        results = sp.search(q=query, type='track', limit=1)
+        if results['tracks']['items']:
+            track_uri = results['tracks']['items'][0]['uri']
+            tracks_to_add.append(track_uri)
+        else:
+            print(f"   Not found: {query}")
+            
+        # Send in batches of 20 to avoid URI length limits
+        if len(tracks_to_add) >= 20:
+            sp.current_user_saved_tracks_add(tracks_to_add)
+            total_added += len(tracks_to_add)
+            print(f"   Saved {len(tracks_to_add)} songs to your library...")
+            tracks_to_add = []
+            
+    if tracks_to_add:
+        sp.current_user_saved_tracks_add(tracks_to_add)
+        total_added += len(tracks_to_add)
+        print(f"   Saved {len(tracks_to_add)} songs to your library...")
+    
+    print(f"Migration completed! {total_added} songs imported to Spotify.")

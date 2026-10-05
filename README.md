@@ -1,79 +1,64 @@
 # YT to Spotify Migrator
 
-A simple script created for one reason: I was too lazy (and paranoid) to use third-party apps like Soundiiz or TuneMyMusic and give them full access to my accounts.
+> A highly reliable browser automation script to migrate your "Liked Songs" from YouTube Music directly into your Spotify library, bypassing anti-bot protections.
 
-This project automates the import of your "Liked Songs" from YouTube Music directly into your Spotify "Liked Songs" library, maintaining the exact chronological order in which you saved them.
+YT to Spotify Migrator automates the tedious process of moving your music library between platforms. Instead of relying on third-party services that require full access to your accounts and often fail due to strict APIs, this tool uses Playwright to simulate a real browser session (using your own cookies) to extract your music and pushes it to Spotify via their official API (spotipy).
 
-## Why this script?
-YouTube Music has strict anti-bot protections that block most unofficial API libraries. This script bypasses that issue by using Playwright to simulate a real browser (using your session cookies), cleanly extracting the data, and pushing it to Spotify via their official API (spotipy).
+## Features
 
-## Roadmap
-- [x] Migrate "Liked Songs" from YT Music to Spotify.
-- [ ] Support for migrating specific playlists.
-- [ ] Export support for Apple Music.
-- [ ] Export support for Tidal.
+- **Anti-Bot Bypass:** Uses Playwright browser simulation to bypass YouTube Music's strict scraping protections.
+- **Chronological Sync:** Maintains the exact order in which you saved your songs on YouTube.
+- **Privacy-First:** Your credentials and cookies never leave your machine; no third-party data sharing.
+- **Modular Execution:** Extract data first to review it (`songs.json`), or run the entire migration in one step.
+- **Future-Ready:** Roadmap includes migrating specific playlists and exporting to Apple Music and Tidal.
 
----
+## Architecture
 
-## Installation
+The migration consists of a two-step pipeline. First, the extraction module reads your YouTube Music session cookies (provided manually) and drives a headless Chromium browser via Playwright to scroll and extract your "Liked Songs". Second, the import module authenticates with Spotify via OAuth2 (`spotipy`) and incrementally adds the extracted tracks to your Spotify library.
 
-1. Clone the repository and install dependencies:
+## Tech Stack
+
+- **Language:** Python
+- **Browser Automation:** Playwright
+- **Spotify Integration:** Spotipy (Official Spotify API Wrapper)
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.11+
+- A Spotify Developer account (for API credentials).
+- Your YouTube Music session cookies.
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/AspenQlio/yt-to-spotify.git
+   cd yt-to-spotify
+   ```
+2. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    playwright install chromium
    ```
-
-2. Set up the environment:
-   - Copy the example environment variables file:
-     ```bash
-     cp .env.example .env
-     ```
-   - Open `.env` and paste your Spotify API credentials.
-
----
-
-## Step 1: Set up Spotify Credentials
-
-1. Go to the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/).
-2. Log in and click "Create App" (name it whatever you like).
-3. Go to the Settings of your App and in "Redirect URIs" add exactly this: `http://127.0.0.1:8888/callback` (make sure to save the changes).
-4. Copy your `Client ID` and `Client Secret` and paste them into the `.env` file.
-
----
-
-## Step 2: Get YouTube Music Cookies
-
-For the script to read your songs without asking for Google passwords, it uses your current session cookies.
-
-1. Open your regular browser and go to your Liked Music page on [YouTube Music](https://music.youtube.com/playlist?list=LM).
-2. Open Developer Tools (F12) -> Network tab.
-3. Refresh the page (F5).
-4. Look for any request (they are usually named `browse` or `?list=LM`).
-5. Right-click the request -> Copy -> Copy Request Headers.
-6. Paste that into a new file named `cookies.json` in the same folder as the script.
-*(It should look like a JSON object containing a "headers" key that includes "Cookie").*
-
----
-
-## Step 3: Run the Migration
-
-You can run the migration in a single step or in two parts if you prefer to review the extracted songs first.
-
-**To do it all at once:**
-```bash
-python yt2spotify.py --all
-```
-
-**If you prefer doing it step by step:**
-1. Extract from YouTube Music:
+3. **Set up Environment:**
    ```bash
-   python yt2spotify.py --extract
+   cp .env.example .env
    ```
-   *(This will generate a `songs.json` file)*
-   
-2. Import to Spotify:
-   ```bash
-   python yt2spotify.py --import-sp
-   ```
+   Add your Spotify `Client ID` and `Client Secret` to `.env`.
 
-Done. Enjoy your music.
+## Usage
+
+1. **Obtain Spotify Credentials:**
+   Create an app in the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/), set the Redirect URI to `http://127.0.0.1:8888/callback`, and copy your credentials to `.env`.
+2. **Obtain YouTube Cookies:**
+   Go to YouTube Music's Liked Music page in your browser, copy the request headers from the Network tab (F12), and save them in a `cookies.json` file.
+3. **Run the Migration:**
+   - For a single-step migration: `python yt2spotify.py --all`
+   - To extract only: `python yt2spotify.py --extract`
+   - To import to Spotify: `python yt2spotify.py --import-sp`
+
+## License
+
+This project is licensed under the MIT License.
